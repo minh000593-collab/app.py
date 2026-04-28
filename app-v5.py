@@ -24,6 +24,10 @@ st.divider()
 if "scores" not in st.session_state:
     st.session_state.scores = []
 
+# 👉 NEW: compressed storage
+if "compressed_data" not in st.session_state:
+    st.session_state.compressed_data = []
+
 # ======================
 # CONSENT
 # ======================
@@ -83,7 +87,30 @@ def extract_features(y, sr):
     return activity_rate, duration, pitch_stability
 
 # ======================
-# RUBRIC (GIỮ NGUYÊN TEXT)
+# DATA COMPRESSION
+# ======================
+def compress_features(text, y, sr, activity_rate, pitch_stability):
+
+    # MFCC compression (audio embedding nhẹ)
+    mfcc = librosa.feature.mfcc(y=y.astype(float), sr=sr, n_mfcc=13)
+    mfcc_mean = np.mean(mfcc, axis=1).tolist()
+
+    filler_words = ["um", "uh", "like", "à", "ừ", "kiểu", "ờ"]
+    filler_count = sum(text.lower().count(w) for w in filler_words)
+
+    words = len(text.split())
+    wpm = words / 1  # placeholder (không dùng duration ở compressed layer)
+
+    return {
+        "mfcc": mfcc_mean,
+        "activity_rate": float(activity_rate),
+        "pitch": float(pitch_stability),
+        "filler": int(filler_count),
+        "wpm": float(words)
+    }
+
+# ======================
+# RUBRIC
 # ======================
 def classify_speed(rate):
     if 80 <= rate <= 140:
@@ -183,10 +210,15 @@ if audio_file is not None:
         pitch_label, pitch_score, pitch_suggestion = classify_pitch(pitch)
 
         total = speed_score + filler_score + pitch_score
-
         score_10 = (total / 6) * 10
 
         overall = overall_label(total)
+
+        # ======================
+        # 👉 STORE COMPRESSED DATA
+        # ======================
+        compressed = compress_features(text, y, sr, activity_rate, pitch)
+        st.session_state.compressed_data.append(compressed)
 
         st.session_state.scores.append(score_10)
 
@@ -218,7 +250,6 @@ if audio_file is not None:
         ax2.set_title("Progress score ( /10 )")
         ax2.set_xlabel("Lần upload")
         ax2.set_ylabel("Điểm")
-
         ax2.set_xticks(x)
 
         st.pyplot(fig2)
