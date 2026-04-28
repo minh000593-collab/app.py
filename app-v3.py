@@ -16,7 +16,7 @@ st.info("⚠️ Kết quả chỉ mang tính tham khảo, không phải đánh g
 st.divider()
 
 # ======================
-# SESSION STATE (PROGRESS TRACKING)
+# SESSION STATE
 # ======================
 if "scores" not in st.session_state:
     st.session_state.scores = []
@@ -51,7 +51,7 @@ def load_audio_safe(file):
         return None, None, str(e)
 
 # ======================
-# FEATURE EXTRACTION
+# FEATURE EXTRACTION (NO SILENCE)
 # ======================
 def extract_features(y, sr):
     duration = len(y) / sr
@@ -68,7 +68,7 @@ def extract_features(y, sr):
     return activity_rate, duration, pitch_stability
 
 # ======================
-# RUBRIC
+# RUBRIC (UNCHANGED TEXT)
 # ======================
 def classify_speed(rate):
     if 80 <= rate <= 140:
@@ -151,23 +151,18 @@ if audio_file is not None:
 
         with st.spinner("Đang phân tích..."):
 
-            activity_rate, silence_ratio, duration, pitch = extract_features(y, sr)
+            activity_rate, duration, pitch = extract_features(y, sr)
 
             speed_label, speed_score = classify_speed(activity_rate)
-            silence_label, silence_score = classify_silence(silence_ratio)
-            filler_label, filler_score = classify_filler()
-            pitch_label, pitch_score = classify_pitch(pitch)
+            filler_label, filler_score, filler_suggestion = classify_filler()
+            pitch_label, pitch_score, pitch_suggestion = classify_pitch(pitch)
 
-            total = speed_score + silence_score + filler_score + pitch_score
+            total = speed_score + filler_score + pitch_score
 
-            # scale về /10
-            score_10 = (total / 8) * 10
+            score_10 = (total / 6) * 10
 
             overall = overall_label(total)
 
-            # ======================
-            # STORE PROGRESS
-            # ======================
             st.session_state.scores.append(score_10)
 
         # ======================
@@ -184,7 +179,7 @@ if audio_file is not None:
         st.write("🎯 Tổng thể:", overall)
 
         # ======================
-        # PROGRESS SECTION (NEW)
+        # PROGRESS SECTION
         # ======================
         if len(st.session_state.scores) >= 2:
 
