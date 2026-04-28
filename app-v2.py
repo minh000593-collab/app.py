@@ -10,29 +10,29 @@ import soundfile as sf
 st.set_page_config(page_title="Debate Coach AI", layout="centered")
 
 st.title("🎤 Debate Coach AI")
+st.write("Phân tích kỹ năng nói từ file ghi âm (.wav)")
 
-st.info("⚠️ Kết quả chỉ mang tính tham khảo")
+# ======================
+# DISCLAIMER
+# ======================
+st.info("⚠️ Kết quả chỉ mang tính tham khảo, không phải đánh giá tuyệt đối.")
 
 st.divider()
 
 # ======================
-# SESSION STATE
-# ======================
-if "scores" not in st.session_state:
-    st.session_state.scores = []
-
-# ======================
 # CONSENT
 # ======================
-consent = st.checkbox("Đồng ý cho AI phân tích audio")
+consent = st.checkbox(
+    "Tôi đồng ý cho DCAI sử dụng audio để phân tích tốc độ nói, cao độ, từ đệm và khoảng lặng."
+)
 
 # ======================
 # UPLOAD
 # ======================
-audio_file = st.file_uploader("Upload .wav", type=["wav"])
+audio_file = st.file_uploader("Upload file ghi âm (.wav)", type=["wav"])
 
 # ======================
-# LOAD AUDIO
+# LOAD AUDIO SAFE
 # ======================
 def load_audio_safe(file):
     try:
@@ -53,7 +53,7 @@ def load_audio_safe(file):
         return None, None, str(e)
 
 # ======================
-# FEATURES
+# FEATURE EXTRACTION
 # ======================
 def extract_features(y, sr):
     duration = len(y) / sr
@@ -66,68 +66,79 @@ def extract_features(y, sr):
 
     silence_ratio = np.sum(energy < 0.01) / len(energy)
 
+    # ======================
+    # PITCH (proxy - đơn giản)
+    # ======================
     zero_crossings = np.sum(np.abs(np.diff(np.sign(y)))) / len(y)
-    pitch = 1 - min(zero_crossings, 1)
+    pitch_stability = 1 - min(zero_crossings, 1)  # càng ổn định càng cao
 
-    return activity_rate, silence_ratio, duration, pitch
+    return activity_rate, silence_ratio, duration, pitch_stability
 
 # ======================
-# CLASSIFY
+# RUBRIC
 # ======================
 def classify_speed(rate):
     if 80 <= rate <= 140:
-        return "ổn 👍", 2
+        return "Ổn định 👍", 2
     elif 60 <= rate < 80 or 140 < rate <= 180:
-        return "hơi lệch ⚠️", 1
+        return "Hơi lệch nhịp ⚠️", 1
     else:
-        return "cần luyện ⛔", 0
+        return "Cần luyện thêm ⛔", 0
 
 
 def classify_silence(ratio):
     if ratio <= 0.25:
-        return "tốt 👍", 2
+        return "Nhịp nghỉ tốt 👍", 2
     elif ratio <= 0.4:
-        return "hơi ngắt ⚠️", 1
+        return "Có hơi nhiều khoảng dừng ⚠️", 1
     else:
-        return "nhiều ngắt ⛔", 0
+        return "Ngắt quãng khá nhiều ⛔", 0
 
 
 def classify_filler():
-    filler = 5
+    filler_count = 5  # placeholder
 
-    if filler <= 3:
-        return "ít 👍", 2
-    elif filler <= 7:
-        return "có ⚠️", 1
+    if filler_count <= 3:
+        return "Ít từ đệm 👍", 2
+    elif filler_count <= 7:
+        return "Có từ đệm ⚠️", 1
     else:
-        return "nhiều ⛔", 0
+        return "Từ đệm khá nhiều ⛔", 0
 
 
-def classify_pitch(p):
-    if p >= 0.7:
-        return "ổn 👍", 2
-    elif p >= 0.4:
-        return "dao động ⚠️", 1
+def classify_pitch(stability):
+    if stability >= 0.7:
+        return "Giọng khá ổn định 👍", 2
+    elif stability >= 0.4:
+        return "Giọng hơi dao động ⚠️", 1
     else:
-        return "chưa ổn ⛔", 0
+        return "Giọng chưa ổn định ⛔", 0
+
+
+def overall_label(total):
+    if total >= 6:
+        return "Tốt 👍"
+    elif total >= 3:
+        return "Trung bình ⚠️"
+    else:
+        return "Cần luyện tập ⛔"
 
 # ======================
-# SCORE
+# FEEDBACK (FRIENDLY)
 # ======================
-def score(total):
-    return round(total / 8 * 10, 1)
+def generate_feedback(speed, silence, filler, pitch):
+    fb = []
 
-# ======================
-# FEEDBACK (GỌN + NATURAL)
-# ======================
-def feedback(speed, silence, filler, pitch):
-    return [
-        f"🗣 Tốc độ: {speed}",
-        f"⏱ Nhịp nghỉ: {silence}",
-        f"💬 Từ đệm: {filler}",
-        f"🎤 Cao độ: {pitch}",
-        "💡 Tip: ưu tiên dừng nhẹ thay vì dùng từ đệm"
-    ]
+    fb.append("💡 Nhận xét dựa trên đoạn ghi âm ngắn, chỉ mang tính tham khảo.")
+
+    fb.append(f"🗣 Tốc độ: {speed} — hãy thử điều chỉnh để người nghe dễ theo dõi hơn.")
+    fb.append(f"⏱ Nhịp nghỉ: {silence} — nghỉ đúng chỗ sẽ giúp lập luận thuyết phục hơn.")
+    fb.append(f"💬 Từ đệm: {filler} — giảm 'ừ, à, kiểu như...' sẽ giúp nói mạch lạc hơn.")
+    fb.append(f"🎼 Cao độ: {pitch} — giữ giọng ổn định sẽ làm bài nói tự tin hơn.")
+
+    fb.append("🚀 Gợi ý: luyện nói theo đoạn 30–60s, tập dừng ở ý quan trọng thay vì dùng từ đệm.")
+
+    return fb
 
 # ======================
 # MAIN
@@ -135,67 +146,71 @@ def feedback(speed, silence, filler, pitch):
 if audio_file is not None:
 
     if not consent:
-        st.warning("Cần đồng ý trước khi phân tích")
+        st.warning("Bạn cần đồng ý cho DCAI phân tích audio trước khi tiếp tục.")
         st.stop()
 
-    st.success("Đã nhận file")
+    st.success("Upload thành công!")
 
     y, sr, err = load_audio_safe(audio_file)
 
     if err:
-        st.error("Lỗi file")
+        st.error("Lỗi đọc file")
         st.code(err)
 
     else:
 
-        # waveform
-        st.subheader("Waveform")
+        # ======================
+        # WAVEFORM
+        # ======================
+        st.subheader("📈 Waveform")
+
         fig, ax = plt.subplots()
         ax.plot(y)
+        ax.set_title("Audio waveform")
         st.pyplot(fig)
 
         st.divider()
 
-        # analysis
-        a, s, d, p = extract_features(y, sr)
+        # ======================
+        # ANALYSIS
+        # ======================
+        with st.spinner("Đang phân tích..."):
 
-        sp, sc1 = classify_speed(a)
-        sl, sc2 = classify_silence(s)
-        fu, sc3 = classify_filler()
-        pi, sc4 = classify_pitch(p)
+            activity_rate, silence_ratio, duration, pitch = extract_features(y, sr)
 
-        total = sc1 + sc2 + sc3 + sc4
-        final_score = score(total)
+            speed_label, speed_score = classify_speed(activity_rate)
+            silence_label, silence_score = classify_silence(silence_ratio)
+            filler_label, filler_score = classify_filler()
+            pitch_label, pitch_score = classify_pitch(pitch)
 
-        st.session_state.scores.append(final_score)
+            total = speed_score + silence_score + filler_score + pitch_score
+            overall = overall_label(total)
 
-        # results
-        st.subheader("Kết quả")
+        # ======================
+        # RESULTS
+        # ======================
+        st.subheader("📊 Kết quả")
 
-        st.write("⏱", round(d, 2), "giây")
-        st.write("🎯 Điểm:", final_score, "/10")
+        st.write(f"⏱ Thời lượng: {duration:.2f}s")
+        st.write(f"📌 Activity rate: {activity_rate:.2f}")
+        st.write(f"🔇 Khoảng lặng: {silence_ratio:.2f}")
 
-        st.write("🗣", sp)
-        st.write("⏱", sl)
-        st.write("💬", fu)
-        st.write("🎤", pi)
+        st.subheader("🏁 Đánh giá")
 
-        # feedback
-        st.subheader("Gợi ý")
-        for f in feedback(sp, sl, fu, pi):
-            st.write(f)
+        st.write("🗣 Tốc độ:", speed_label)
+        st.write("🔇 Nhịp nghỉ:", silence_label)
+        st.write("💬 Từ đệm:", filler_label)
+        st.write("🎼 Cao độ:", pitch_label)
 
-        # progress (>= 2 files)
-        if len(st.session_state.scores) >= 2:
-            st.subheader("Tiến bộ")
+        st.write("🎯 Tổng thể:", overall)
 
-            fig2, ax2 = plt.subplots()
-            ax2.plot(st.session_state.scores)
-            ax2.set_title("Score theo thời gian")
-            ax2.set_xlabel("Lần")
-            ax2.set_ylabel("Điểm /10")
+        # ======================
+        # FEEDBACK
+        # ======================
+        st.subheader("💡 Feedback")
 
-            st.pyplot(fig2)
+        for f in generate_feedback(speed_label, silence_label, filler_label, pitch_label):
+            st.write("•", f)
 
 else:
-    st.info("Upload file WAV để bắt đầu")
+    st.info("Upload file WAV để bắt đầu 🎤")
