@@ -80,20 +80,27 @@ def classify_speed(rate):
 
 def classify_filler():
     filler_count = 5
-    if filler_count <= 3:
-        return "Bạn sử dụng khá ít từ đệm 👍", 2
-    elif filler_count <= 7:
-    return (
-        "Bạn có sử dụng từ đệm ⚠️ (như 'ừ', 'à', 'kiểu như')",
-        1,
-        "Hãy thử dừng 1–2 giây thay vì dùng từ đệm khi cần suy nghĩ nha."
-    )
 
-else:
-    return (
-        "Bạn sử dụng từ đệm khá nhiều ⛔ (ảnh hưởng độ trôi chảy của bài nói)",
-        0,
-        "Hãy luyện nói chậm lại và tập thay từ đệm bằng các khoảng dừng ngắn nha."
+    if filler_count <= 3:
+        return (
+            "Bạn sử dụng khá ít từ đệm 👍",
+            2,
+            "Giữ phong độ này nhé, rất tốt cho sự trôi chảy khi nói."
+        )
+
+    elif filler_count <= 7:
+        return (
+            "Bạn có sử dụng từ đệm ⚠️ (như 'ừ', 'à', 'kiểu như')",
+            1,
+            "Hãy thử dừng 1–2 giây thay vì dùng từ đệm khi cần suy nghĩ."
+        )
+
+    else:
+        return (
+            "Bạn sử dụng từ đệm khá nhiều ⛔",
+            0,
+            "Luyện nói chậm lại và thay từ đệm bằng khoảng dừng ngắn."
+        )
 
 def classify_pitch(stability):
     if stability >= 0.7:
