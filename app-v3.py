@@ -25,7 +25,7 @@ if "scores" not in st.session_state:
 # CONSENT
 # ======================
 consent = st.checkbox(
-    "Tôi đồng ý cho Debate Coach AI sử dụng audio để phân tích tốc độ nói, cao độ, số lượng từ đệm và khoảng lặng trong bài nói tranh biện của mình."
+    "Tôi đồng ý cho Debate Coach AI sử dụng audio để phân tích tốc độ nói, cao độ, và số lượng từ đệm trong bài nói tranh biện của mình."
 )
 
 audio_file = st.file_uploader("Upload file ghi âm (.wav)", type=["wav"])
@@ -62,56 +62,63 @@ def extract_features(y, sr):
     activity = np.sum(energy > energy_mean)
     activity_rate = activity / max(duration, 1e-6)
 
-    silence_ratio = np.sum(energy < 0.01) / len(energy)
-
     zero_crossings = np.sum(np.abs(np.diff(np.sign(y)))) / len(y)
     pitch_stability = 1 - min(zero_crossings, 1)
 
-    return activity_rate, silence_ratio, duration, pitch_stability
+    return activity_rate, duration, pitch_stability
 
 # ======================
 # RUBRIC
 # ======================
 def classify_speed(rate):
     if 80 <= rate <= 140:
-        return "Ổn định 👍", 2
-    elif 60 <= rate < 80 or 140 < rate <= 180:
-        return "Hơi lệch nhịp ⚠️", 1
+        return "Tốc độ ổn định 👍", 2
+    elif rate > 140:
+        return "Bạn đang nói hơi nhanh ⚠️, hãy thử chậm lại một chút để người nghe theo kịp nhé.", 1
     else:
-        return "Cần luyện thêm ⛔", 0
-
-def classify_silence(ratio):
-    if ratio <= 0.25:
-        return "Bài nói có nhịp nghỉ tốt 👍", 2
-    elif ratio <= 0.4:
-        return "Bài nói có hơi nhiều khoảng dừng ⚠️", 1
-    else:
-        return "Bài nói bị ngắt quãng khá nhiều ⛔", 0
+        return "Bạn đang nói hơi chậm ⚠️, thử tăng nhịp lên để bài nói tự nhiên hơn nhé.", 1
 
 def classify_filler():
     filler_count = 5
     if filler_count <= 3:
-        return "Bạn sử dụng ít từ đệm 👍", 2
+        return "Bạn sử dụng khá ít từ đệm 👍", 2
     elif filler_count <= 7:
-        return "Bạn có sử dụng từ đệm ⚠️", 1
-    else:
-        return "Bạn sử dụng từ đệm khá nhiều ⛔", 0
+    return (
+        "Bạn có sử dụng từ đệm ⚠️ (như 'ừ', 'à', 'kiểu như')",
+        1,
+        "Hãy thử dừng 1–2 giây thay vì dùng từ đệm khi cần suy nghĩ nha."
+    )
+
+else:
+    return (
+        "Bạn sử dụng từ đệm khá nhiều ⛔ (ảnh hưởng độ trôi chảy của bài nói)",
+        0,
+        "Hãy luyện nói chậm lại và tập thay từ đệm bằng các khoảng dừng ngắn nha."
 
 def classify_pitch(stability):
     if stability >= 0.7:
-        return "Giọng của bạn khá ổn định 👍", 2
+        return "Giọng của bạn khá ổn định 👍 Giữ tốc độ nói này là tốt rồi. Bạn có thể thử nhấn nhá nhiều hơn để tăng tính biểu cảm nhé.", 2
     elif stability >= 0.4:
-        return "Giọng của bạn hơi dao động ⚠️", 1
+        return (
+            "Giọng của bạn hơi dao động ⚠️",
+            1,
+            "Hãy thử nói chậm lại một chút và giữ hơi đều hơn giữa các câu."
+        )
+
     else:
-        return "Giọng của bạn chưa ổn định ⛔", 0
+        return (
+            "Giọng của bạn chưa ổn định ⛔",
+            0,
+            "Hãy thử nói chậm lại một chút và giữ hơi đều hơn giữa các câu."
+        )
 
 def overall_label(total):
     if total >= 6:
-        return "Tốt 👍"
+        return "Kĩ năng nói của bạn ở mức tốt 👍"
     elif total >= 3:
-        return "Trung bình ⚠️"
+        return "Kĩ năng nói của bạn ở mức trung bình ⚠️"
     else:
-        return "Cần luyện tập ⛔"
+        return "Kĩ năng nói của bạn cần luyện tập thêm ⛔"
 
 # ======================
 # MAIN
@@ -165,7 +172,6 @@ if audio_file is not None:
 
         st.subheader("🏁 Các tiêu chí đánh giá")
         st.write("🗣 Tốc độ:", speed_label)
-        st.write("🔇 Nhịp nghỉ:", silence_label)
         st.write("💬 Từ đệm:", filler_label)
         st.write("🎼 Cao độ:", pitch_label)
         st.write("🎯 Tổng thể:", overall)
