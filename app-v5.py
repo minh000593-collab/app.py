@@ -15,8 +15,7 @@ st.set_page_config(page_title="Debate Coach AI", layout="centered")
 st.title("🎤 Debate Coach AI")
 st.write("Phân tích kỹ năng nói từ file ghi âm (.wav)")
 
-st.info("⚠️ Kết quả chỉ mang tính tham khảo, không phải đánh giá tuyệt đối.")
-st.divider()
+st.info("⚠️ Kết quả chỉ mang tính tham khảo, có thể sai lệch tùy theo chất lượng âm thanh, môi trường ghi âm và cách nói. AI chỉ là công cụ hỗ trợ, không thể thay thế đánh giá của con người.")st.divider()
 
 # ======================
 # SESSION STATE
