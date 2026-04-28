@@ -184,28 +184,32 @@ if audio_file is not None:
         st.write("🎯 Tổng thể:", overall)
 
         # ======================
-        # PROGRESS SECTION
-        # ======================
-        if len(st.session_state.scores) >= 2:
+# PROGRESS SECTION
+# ======================
+if len(st.session_state.scores) >= 2:
 
-            st.subheader("📈 Sự tiến bộ của bạn")
+    st.subheader("📈 Sự tiến bộ của bạn")
 
-            fig2, ax2 = plt.subplots()
-            ax2.plot(range(1, len(st.session_state.scores) + 1),
-                     st.session_state.scores, marker="o")
-            ax2.set_title("Progress score ( /10 )")
-            ax2.set_xlabel("Lần upload")
-            ax2.set_ylabel("Điểm")
+    x = np.arange(1, len(st.session_state.scores) + 1, dtype=int)
 
-            st.pyplot(fig2)
+    fig2, ax2 = plt.subplots()
+    ax2.plot(x, st.session_state.scores, marker="o")
 
-            # nhận xét xu hướng
-            if st.session_state.scores[-1] > st.session_state.scores[-2]:
-                st.success("🔥 Bạn đang tiến bộ rõ rệt. Hãy giữ nhịp độ này và tiếp tục luyện tập!")
-            elif st.session_state.scores[-1] == st.session_state.scores[-2]:
-                st.info("🙂 Kĩ năng nói của bạn rất ổn định.")
-            else:
-                st.warning("💡 Hãy duy trì luyện tập đều đặn nhé!")
+    ax2.set_title("Progress score ( /10 )")
+    ax2.set_xlabel("Lần upload")
+    ax2.set_ylabel("Điểm")
+
+    ax2.set_xticks(x)  # đảm bảo hiển thị đúng số nguyên từng lần upload
+
+    st.pyplot(fig2)
+
+    # nhận xét xu hướng
+    if st.session_state.scores[-1] > st.session_state.scores[-2]:
+        st.success("🔥 Bạn đang tiến bộ rõ rệt. Hãy giữ nhịp độ này và tiếp tục luyện tập!")
+    elif st.session_state.scores[-1] == st.session_state.scores[-2]:
+        st.info("🙂 Kĩ năng nói của bạn rất ổn định.")
+    else:
+        st.warning("💡 Hãy duy trì luyện tập đều đặn nhé!")
 
 else:
     st.info("Upload file WAV để bắt đầu 🎤")
