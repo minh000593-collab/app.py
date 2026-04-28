@@ -104,7 +104,12 @@ def classify_filler():
 
 def classify_pitch(stability):
     if stability >= 0.7:
-        return "Giọng của bạn khá ổn định 👍 Giữ tốc độ nói này là tốt rồi. Bạn có thể thử nhấn nhá nhiều hơn để tăng tính biểu cảm nhé.", 2
+        return (
+            "Giọng của bạn khá ổn định 👍 Giữ tốc độ nói này là tốt rồi. Bạn có thể thử nhấn nhá nhiều hơn để tăng tính biểu cảm nhé.",
+            2,
+            "Giữ phong độ này và thử thêm nhấn nhá để bài nói thuyết phục hơn."
+        )
+
     elif stability >= 0.4:
         return (
             "Giọng của bạn hơi dao động ⚠️",
@@ -116,7 +121,7 @@ def classify_pitch(stability):
         return (
             "Giọng của bạn chưa ổn định ⛔",
             0,
-            "Hãy thử nói chậm lại một chút và giữ hơi đều hơn giữa các câu."
+            "Hãy luyện nói chậm, rõ từng ý và kiểm soát hơi thở tốt hơn."
         )
 
 def overall_label(total):
