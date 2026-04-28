@@ -2,3 +2,5 @@ streamlit
 numpy
 matplotlib
 soundfile
+openai-whisper
+librosa
