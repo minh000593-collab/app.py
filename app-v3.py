@@ -210,6 +210,3 @@ if len(st.session_state.scores) >= 2:
         st.info("🙂 Kĩ năng nói của bạn rất ổn định.")
     else:
         st.warning("💡 Hãy duy trì luyện tập đều đặn nhé!")
-
-else:
-    st.info("Upload file WAV để bắt đầu 🎤")
